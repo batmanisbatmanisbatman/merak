@@ -1,4 +1,4 @@
---// Merak GUI Full v1.1 (Neon Purple, Fly + Orbit + Desync + Clone Toggle + Tabs + Sliders + Notifications)
+--// Merak GUI Full v1.2 (Neon Purple, Fly + Bullet TP Orbit Camlock + Desync + Clone Toggle + Tabs + Sliders + Notifications)
 if game.CoreGui:FindFirstChild("merak") then
     game.CoreGui.merak:Destroy()
 end
@@ -198,7 +198,7 @@ end
 
 -- Target tab contents
 local flySpeed = 1.5
-local orbitSpeed = 10
+local orbitSpeed = 50  -- much faster default
 
 local flyToggle = Instance.new("TextButton", TargetPage)
 flyToggle.Size = UDim2.new(0, 100, 0, 30)
@@ -266,57 +266,73 @@ orbitToggle.MouseButton1Click:Connect(function()
     if orbitConn then orbitConn:Disconnect() orbitConn = nil end
     if orbitEnabled then
         local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        -- find first other player
-        local target = nil
+        if not hrp then
+            Notify("No HumanoidRootPart found!")
+            orbitEnabled = false
+            orbitToggle.Text = "Orbit: OFF"
+            return
+        end
+        -- Find closest target player with HumanoidRootPart
+        local closestTarget = nil
+        local closestDist = math.huge
         for _, plr in pairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                target = plr
-                break
+                local dist = (hrp.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+                if dist < closestDist then
+                    closestDist = dist
+                    closestTarget = plr
+                end
             end
         end
-        if not target then
+        if not closestTarget then
             Notify("No valid target found for orbit!")
             orbitEnabled = false
             orbitToggle.Text = "Orbit: OFF"
             return
         end
-        local TargetHRP = target.Character.HumanoidRootPart
-        local angle = 0
-        local radius = 7
+
+        local TargetHRP = closestTarget.Character.HumanoidRootPart
         orbitConn = RunService.Heartbeat:Connect(function(dt)
-            angle += dt * orbitSpeed
-            local offset = Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
-            hrp.CFrame = CFrame.new(TargetHRP.Position + offset, TargetHRP.Position)
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, TargetHRP.Position + Vector3.new(0,1,0))
+            if not orbitEnabled or not TargetHRP or not hrp.Parent then
+                orbitConn:Disconnect()
+                orbitConn = nil
+                orbitToggle.Text = "Orbit: OFF"
+                return
+            end
+            -- Bullet teleport HRP directly to camlocked target's torso position
+            hrp.CFrame = CFrame.new(TargetHRP.Position)
+            -- Make camera look at target torso for camlock effect
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, TargetHRP.Position + Vector3.new(0,1.5,0))
         end)
     end
 end)
 
-local orbitSpeedSlider = CreateSlider(TargetPage, "Orbit Speed", 1, 30, orbitSpeed, function(value)
+local orbitSpeedSlider = CreateSlider(TargetPage, "Orbit Speed", 1, 100, orbitSpeed, function(value)
     orbitSpeed = value
 end)
 orbitSpeedSlider.Position = UDim2.new(0, 10, 0, 170)
 
--- Desync tab contents
+-- Desync tab content
 local desyncToggle = Instance.new("TextButton", DesyncPage)
-desyncToggle.Size = UDim2.new(0, 150, 0, 40)
-desyncToggle.Position = UDim2.new(0, 40, 0, 40)
-desyncToggle.BackgroundColor3 = Color3.fromRGB(150, 0, 200)
-desyncToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-desyncToggle.TextScaled = true
-desyncToggle.Text = "Toggle Desync"
+desyncToggle.Size = UDim2.new(0, 100, 0, 30)
+desyncToggle.Position = UDim2.new(0, 10, 0, 40)
+desyncToggle.BackgroundColor3 = Color3.fromRGB(120, 0, 180)
+desyncToggle.TextColor3 = Color3.new(1,1,1)
+desyncToggle.Font = Enum.Font.GothamBold
+desyncToggle.TextSize = 18
+desyncToggle.Text = "Desync: OFF"
 desyncToggle.AutoButtonColor = false
 local desyncCorner = Instance.new("UICorner", desyncToggle)
-desyncCorner.CornerRadius = UDim.new(0, 10)
+desyncCorner.CornerRadius = UDim.new(0, 8)
 
 local desyncing = false
 local clone
-local heartbeatConn
 local cloneExists = false
+local heartbeatConn
 
 desyncToggle.MouseButton1Click:Connect(function()
     desyncing = not desyncing
+    desyncToggle.Text = "Desync: " .. (desyncing and "ON" or "OFF")
     Notify("Desync: " .. (desyncing and "Enabled" or "Disabled"))
     if desyncing then
         local char = LocalPlayer.Character
