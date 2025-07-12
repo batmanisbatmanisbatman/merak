@@ -1,312 +1,229 @@
--- Destroy old GUI if exists
+--// Merak GUI (Purple Theme, Orbit, Camlock, Fly, Desync, ESP)
 if game.CoreGui:FindFirstChild("merak") then
     game.CoreGui.merak:Destroy()
 end
 
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "merak"
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
 
-local mainFrame = Instance.new("Frame", gui)
-mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 500, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.Active = true
-mainFrame.Draggable = true
+Mouse.Icon = "rbxassetid://12550511253" -- custom purple cursor
 
-local uicornerMain = Instance.new("UICorner", mainFrame)
-uicornerMain.CornerRadius = UDim.new(0, 8)
-local uistrokeMain = Instance.new("UIStroke", mainFrame)
-uistrokeMain.Thickness = 1
-uistrokeMain.Color = Color3.fromRGB(60, 60, 60)
+local Gui = Instance.new("ScreenGui", game.CoreGui)
+Gui.Name = "merak"
+Gui.ResetOnSpawn = false
 
-local tabBar = Instance.new("Frame", mainFrame)
-tabBar.Size = UDim2.new(0, 100, 1, 0)
-tabBar.Position = UDim2.new(0, 0, 0, 0)
-tabBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+local MainFrame = Instance.new("Frame", Gui)
+MainFrame.Size = UDim2.new(0, 650, 0, 200)
+MainFrame.Position = UDim2.new(0.5, -325, 0.5, -100)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 0, 50)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
 
-local layout = Instance.new("UIListLayout", tabBar)
-layout.FillDirection = Enum.FillDirection.Vertical
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-layout.Padding = UDim.new(0, 5)
+local UICorner = Instance.new("UICorner", MainFrame)
+UICorner.CornerRadius = UDim.new(0, 8)
+local Stroke = Instance.new("UIStroke", MainFrame)
+Stroke.Thickness = 2
+Stroke.Color = Color3.fromRGB(180, 0, 255)
+Stroke.Transparency = 0.2
+
+-- Tab system
+local TabBar = Instance.new("Frame", MainFrame)
+TabBar.Size = UDim2.new(0, 100, 1, 0)
+TabBar.BackgroundColor3 = Color3.fromRGB(45, 0, 60)
+local TabLayout = Instance.new("UIListLayout", TabBar)
+TabLayout.FillDirection = Enum.FillDirection.Vertical
+TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 local function createTabButton(name)
-	local btn = Instance.new("TextButton", tabBar)
-	btn.Size = UDim2.new(1, 0, 0, 40)
-	btn.Text = name
-	btn.Name = name .. "Tab"
-	btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.TextScaled = true
-	btn.AutoButtonColor = false
-	
-	local corner = Instance.new("UICorner", btn)
-	corner.CornerRadius = UDim.new(0, 6)
-	
-	btn.MouseEnter:Connect(function()
-		btn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-	end)
-	btn.MouseLeave:Connect(function()
-		btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-	end)
-
-	return btn
+    local btn = Instance.new("TextButton", TabBar)
+    btn.Size = UDim2.new(1, 0, 0, 40)
+    btn.Text = name
+    btn.Name = name .. "Tab"
+    btn.BackgroundColor3 = Color3.fromRGB(80, 0, 130)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    return btn
 end
 
--- Create three tab buttons
-local targetTab = createTabButton("Target")
-local desyncTab = createTabButton("Desync")
-local characterTab = createTabButton("Character")
-
-local function createTabPage(name)
-	local page = Instance.new("Frame", mainFrame)
-	page.Name = name .. "Page"
-	page.Size = UDim2.new(1, -100, 1, 0)
-	page.Position = UDim2.new(0, 100, 0, 0)
-	page.Visible = false
-	page.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-	
-	local corner = Instance.new("UICorner", page)
-	corner.CornerRadius = UDim.new(0, 6)
-	
-	return page
+local function createPage(name)
+    local page = Instance.new("Frame", MainFrame)
+    page.Size = UDim2.new(1, -100, 1, 0)
+    page.Position = UDim2.new(0, 100, 0, 0)
+    page.BackgroundColor3 = Color3.fromRGB(40, 0, 60)
+    page.Visible = false
+    page.Name = name .. "Page"
+    return page
 end
 
-local targetPage = createTabPage("Target")
-local desyncPage = createTabPage("Desync")
-local characterPage = createTabPage("Character")
-targetPage.Visible = true -- open by default
+local TargetTab = createTabButton("Target")
+local DesyncTab = createTabButton("Desync")
+local CharacterTab = createTabButton("Character")
+local ESPTab = createTabButton("ESP")
 
-local function showTab(page)
-	targetPage.Visible = false
-	desyncPage.Visible = false
-	characterPage.Visible = false
-	page.Visible = true
+local TargetPage = createPage("Target")
+local DesyncPage = createPage("Desync")
+local CharacterPage = createPage("Character")
+local ESPPage = createPage("ESP")
+
+TargetPage.Visible = true
+
+local function showTab(tab)
+    for _, page in pairs({TargetPage, DesyncPage, CharacterPage, ESPPage}) do
+        page.Visible = false
+    end
+    tab.Visible = true
 end
 
-targetTab.MouseButton1Click:Connect(function()
-	showTab(targetPage)
+TargetTab.MouseButton1Click:Connect(function()
+    showTab(TargetPage)
+end)
+DesyncTab.MouseButton1Click:Connect(function()
+    showTab(DesyncPage)
+end)
+CharacterTab.MouseButton1Click:Connect(function()
+    showTab(CharacterPage)
+end)
+ESPTab.MouseButton1Click:Connect(function()
+    showTab(ESPPage)
 end)
 
-desyncTab.MouseButton1Click:Connect(function()
-	showTab(desyncPage)
+-- Target Orbit
+local Input = Instance.new("TextBox", TargetPage)
+Input.PlaceholderText = "Enter player name..."
+Input.Size = UDim2.new(0, 300, 0, 40)
+Input.Position = UDim2.new(0, 120, 0, 30)
+Input.BackgroundColor3 = Color3.fromRGB(50, 0, 80)
+Input.TextColor3 = Color3.fromRGB(255, 255, 255)
+Input.TextScaled = true
+Instance.new("UICorner", Input)
+
+local Button = Instance.new("TextButton", TargetPage)
+Button.Size = UDim2.new(0, 300, 0, 40)
+Button.Position = UDim2.new(0, 120, 0, 90)
+Button.Text = "Orbit + Camlock"
+Button.BackgroundColor3 = Color3.fromRGB(150, 0, 200)
+Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+Button.TextScaled = true
+Instance.new("UICorner", Button)
+
+Button.MouseButton1Click:Connect(function()
+    local name = Input.Text
+    local target = nil
+    for _, plr in pairs(Players:GetPlayers()) do
+        if string.lower(plr.Name):sub(1, #name) == string.lower(name) and plr ~= LocalPlayer then
+            target = plr
+            break
+        end
+    end
+    if not target then warn("Player not found") return end
+    local HRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local TargetHRP = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+    if not HRP or not TargetHRP then return end
+    local angle = 0
+    local radius = 7
+    local speed = 10
+    local cam = workspace.CurrentCamera
+    local Orbiting = true
+    local connection
+    connection = RunService.Heartbeat:Connect(function(dt)
+        if not Orbiting or not TargetHRP or not HRP then connection:Disconnect() return end
+        angle = angle + dt * speed
+        local offset = Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius)
+        HRP.CFrame = CFrame.new(TargetHRP.Position + offset, TargetHRP.Position)
+        cam.CFrame = CFrame.new(cam.CFrame.Position, TargetHRP.Position + Vector3.new(0,1,0))
+    end)
 end)
 
-characterTab.MouseButton1Click:Connect(function()
-	showTab(characterPage)
-end)
+-- Character Fly
+local FlyBtn = Instance.new("TextButton", CharacterPage)
+FlyBtn.Size = UDim2.new(0, 200, 0, 40)
+FlyBtn.Position = UDim2.new(0, 120, 0, 40)
+FlyBtn.Text = "Toggle Fly (F)"
+FlyBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 200)
+FlyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlyBtn.TextScaled = true
+Instance.new("UICorner", FlyBtn)
 
--- Close button
-local closeBtn = Instance.new("TextButton", mainFrame)
-closeBtn.Name = "CloseBtn"
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -35, 0, 5)
-closeBtn.Text = "X"
-closeBtn.BackgroundColor3 = Color3.fromRGB(170, 50, 50)
-closeBtn.TextColor3 = Color3.new(1,1,1)
-closeBtn.TextScaled = true
-closeBtn.AutoButtonColor = false
-
-local cornerClose = Instance.new("UICorner", closeBtn)
-cornerClose.CornerRadius = UDim.new(0, 6)
-
-closeBtn.MouseEnter:Connect(function()
-	closeBtn.BackgroundColor3 = Color3.fromRGB(200, 70, 70)
-end)
-closeBtn.MouseLeave:Connect(function()
-	closeBtn.BackgroundColor3 = Color3.fromRGB(170, 50, 50)
-end)
-
-closeBtn.MouseButton1Click:Connect(function()
-	gui:Destroy()
-end)
-
--- === Character Tab Fly Script (CFrame Fly with speed slider) ===
-do
-	local flyEnabled = false
-	local speed = 50 -- default speed
-	local player = game.Players.LocalPlayer
-	local mouse = player:GetMouse()
-	local uis = game:GetService("UserInputService")
-	local runService = game:GetService("RunService")
-	local character = player.Character or player.CharacterAdded:Wait()
-	local hrp = character:WaitForChild("HumanoidRootPart")
-	local cam = workspace.CurrentCamera
-
-	-- Fly toggle button
-	local flyBtn = Instance.new("TextButton", characterPage)
-	flyBtn.Size = UDim2.new(0, 200, 0, 40)
-	flyBtn.Position = UDim2.new(0, 20, 0, 20)
-	flyBtn.Text = "Toggle Fly"
-	flyBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-	flyBtn.TextColor3 = Color3.new(1,1,1)
-	flyBtn.TextScaled = true
-	flyBtn.AutoButtonColor = false
-	
-	local corner = Instance.new("UICorner", flyBtn)
-	corner.CornerRadius = UDim.new(0, 6)
-
-	-- Speed label
-	local speedLabel = Instance.new("TextLabel", characterPage)
-	speedLabel.Size = UDim2.new(0, 200, 0, 25)
-	speedLabel.Position = UDim2.new(0, 20, 0, 70)
-	speedLabel.Text = "Fly Speed: " .. speed
-	speedLabel.TextColor3 = Color3.new(1,1,1)
-	speedLabel.BackgroundTransparency = 1
-	speedLabel.TextScaled = true
-	speedLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-	-- Speed slider background
-	local sliderBg = Instance.new("Frame", characterPage)
-	sliderBg.Size = UDim2.new(0, 200, 0, 15)
-	sliderBg.Position = UDim2.new(0, 20, 0, 100)
-	sliderBg.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-	sliderBg.ClipsDescendants = true
-	local sliderCorner = Instance.new("UICorner", sliderBg)
-	sliderCorner.CornerRadius = UDim.new(0, 6)
-
-	-- Slider fill
-	local sliderFill = Instance.new("Frame", sliderBg)
-	sliderFill.Size = UDim2.new(speed/150, 0, 1, 0) -- max speed 150
-	sliderFill.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-	local fillCorner = Instance.new("UICorner", sliderFill)
-	fillCorner.CornerRadius = UDim.new(0, 6)
-
-	-- Slider button
-	local sliderBtn = Instance.new("TextButton", sliderBg)
-	sliderBtn.Size = UDim2.new(0, 15, 1, 0)
-	sliderBtn.Position = UDim2.new(speed/150 - 0.05, 0, 0, 0)
-	sliderBtn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-	sliderBtn.AutoButtonColor = false
-	local btnCorner = Instance.new("UICorner", sliderBtn)
-	btnCorner.CornerRadius = UDim.new(0, 8)
-	sliderBtn.Text = ""
-
-	local dragging = false
-
-	local function updateSlider(inputPosX)
-		local relativePos = math.clamp(inputPosX - sliderBg.AbsolutePosition.X, 0, sliderBg.AbsoluteSize.X)
-		local percent = relativePos / sliderBg.AbsoluteSize.X
-		speed = math.floor(5 + percent * 145) -- speed from 5 to 150
-		sliderFill.Size = UDim2.new(percent, 0, 1, 0)
-		sliderBtn.Position = UDim2.new(percent - 0.05, 0, 0, 0)
-		speedLabel.Text = "Fly Speed: " .. speed
-	end
-
-	sliderBtn.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-		end
-	end)
-
-	sliderBtn.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = false
-		end
-	end)
-
-	sliderBg.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			updateSlider(input.Position.X)
-			dragging = true
-		end
-	end)
-
-	sliderBg.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = false
-		end
-	end)
-
-	sliderBg.InputChanged:Connect(function(input)
-		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-			updateSlider(input.Position.X)
-		end
-	end)
-
-	local velocity = Vector3.new(0,0,0)
-	local direction = Vector3.new(0,0,0)
-
-	local connection
-	flyBtn.MouseButton1Click:Connect(function()
-		flyEnabled = not flyEnabled
-		flyBtn.Text = flyEnabled and "Fly Enabled" or "Fly Disabled"
-		if flyEnabled then
-			character = player.Character or player.CharacterAdded:Wait()
-			hrp = character:WaitForChild("HumanoidRootPart")
-			cam = workspace.CurrentCamera
-
-			connection = runService.Heartbeat:Connect(function(deltaTime)
-				direction = Vector3.new(0,0,0)
-				if uis:IsKeyDown(Enum.KeyCode.W) then
-					direction = direction + cam.CFrame.LookVector
-				end
-				if uis:IsKeyDown(Enum.KeyCode.S) then
-					direction = direction - cam.CFrame.LookVector
-				end
-				if uis:IsKeyDown(Enum.KeyCode.A) then
-					direction = direction - cam.CFrame.RightVector
-				end
-				if uis:IsKeyDown(Enum.KeyCode.D) then
-					direction = direction + cam.CFrame.RightVector
-				end
-				if uis:IsKeyDown(Enum.KeyCode.Space) then
-					direction = direction + Vector3.new(0,1,0)
-				end
-				if uis:IsKeyDown(Enum.KeyCode.LeftControl) then
-					direction = direction - Vector3.new(0,1,0)
-				end
-				if direction.Magnitude > 0 then
-					direction = direction.Unit
-				end
-				velocity = direction * speed
-				if direction.Magnitude > 0 then
-					local newCFrame = hrp.CFrame + velocity * deltaTime
-					hrp.CFrame = newCFrame
-				end
-			end)
-		else
-			if connection then
-				connection:Disconnect()
-				connection = nil
-			end
-		end
-	end)
+local flying = false
+local flyspeed = 2
+local float
+local vel
+local function Fly()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    float = Instance.new("BodyPosition")
+    float.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    float.P = 10000
+    float.Position = hrp.Position + Vector3.new(0,2,0)
+    float.Parent = hrp
+    vel = Instance.new("BodyVelocity")
+    vel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    vel.Velocity = Vector3.zero
+    vel.Parent = hrp
+    RunService.Heartbeat:Connect(function()
+        if not flying then return end
+        local dir = Vector3.zero
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir - Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir - Camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + Camera.CFrame.RightVector end
+        vel.Velocity = dir.Unit * flyspeed * 10
+        float.Position = hrp.Position + Vector3.new(0, 2, 0)
+    end)
 end
 
--- === Add your Target and Desync tab buttons/features below ===
--- For example, add a dummy button in Target tab:
+FlyBtn.MouseButton1Click:Connect(function()
+    flying = not flying
+    if flying then Fly() else if float then float:Destroy() end if vel then vel:Destroy() end end
+end)
 
-do
-	local btn = Instance.new("TextButton", targetPage)
-	btn.Size = UDim2.new(0, 200, 0, 40)
-	btn.Position = UDim2.new(0, 20, 0, 20)
-	btn.Text = "Example Target Button"
-	btn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.TextScaled = true
-	btn.AutoButtonColor = false
-	local corner = Instance.new("UICorner", btn)
-	corner.CornerRadius = UDim.new(0, 6)
-	btn.MouseButton1Click:Connect(function()
-		print("Target button clicked!")
-	end)
-end
+-- Desync Tab
+local DesyncBtn = Instance.new("TextButton", DesyncPage)
+DesyncBtn.Size = UDim2.new(0, 300, 0, 40)
+DesyncBtn.Position = UDim2.new(0, 120, 0, 40)
+DesyncBtn.Text = "Toggle Desync (G)"
+DesyncBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 200)
+DesyncBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+DesyncBtn.TextScaled = true
+Instance.new("UICorner", DesyncBtn)
 
--- Dummy button in Desync tab:
+local desyncing = false
+DesyncBtn.MouseButton1Click:Connect(function()
+    desyncing = not desyncing
+    local clone
+    if desyncing then
+        local char = LocalPlayer.Character
+        if not char then return end
+        clone = char:Clone()
+        clone.Parent = workspace
+        for _, v in ipairs(clone:GetDescendants()) do
+            if v:IsA("BasePart") then v.Anchored = true end
+        end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        local tickVal = 0
+        RunService.Heartbeat:Connect(function(dt)
+            if not desyncing then clone:Destroy() return end
+            tickVal += dt
+            if root then
+                root.CFrame = CFrame.new(0, -4999, 0) + Vector3.new(math.random(-500,500), 0, math.random(-500,500))
+            end
+        end)
+    else
+        if workspace:FindFirstChild(clone.Name) then
+            clone:Destroy()
+        end
+    end
+end)
 
-do
-	local btn = Instance.new("TextButton", desyncPage)
-	btn.Size = UDim2.new(0, 200, 0, 40)
-	btn.Position = UDim2.new(0, 20, 0, 20)
-	btn.Text = "Example Desync Button"
-	btn.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.TextScaled = true
-	btn.AutoButtonColor = false
-	local corner = Instance.new("UICorner", btn)
-	corner.CornerRadius = UDim.new(0, 6)
-	btn.MouseButton1Click:Connect(function()
-		print("Desync button clicked!")
-	end)
-end
+-- RightShift to hide GUI
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        Gui.Enabled = not Gui.Enabled
+    end
+end)
